@@ -1,0 +1,24 @@
+{
+  "name": "BlinkSafe Mobile",
+  "version": "1.0.0",
+  "target_hardware": {
+    "minimum_ram_gb": 2,
+    "recommended_ram_gb": 4,
+    "platform": "Android"
+  },
+  "performance": {
+    "low_end_mode": true,
+    "camera_resolution": {
+      "width": 640,
+      "height": 480
+    },
+    "cv_processing_fps": 8,
+    "zero_base64_streaming": true,
+    "in_place_rendering": true,
+    "disable_heavy_animations": true
+  },
+  "sos": {
+    "countdown_seconds": 60,
+    "offline_emergency_mode": true
+  }
+}

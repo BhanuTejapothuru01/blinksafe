@@ -10,7 +10,7 @@ import time
 import threading
 import cv2
 import numpy as np
-from config.config import CAMERA_INDEX, FRAME_WIDTH, FRAME_HEIGHT, FPS_TARGET
+from config.config import CAMERA_INDEX, FRAME_WIDTH, FRAME_HEIGHT, FPS_TARGET, PROCESSING_FPS, LOW_END_MODE
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -140,6 +140,8 @@ class CameraManager:
             return
 
         target_delay = 1.0 / FPS_TARGET if FPS_TARGET > 0 else 0.033
+        inference_interval = 1.0 / PROCESSING_FPS if (LOW_END_MODE and PROCESSING_FPS > 0) else 0.0
+        last_inference_time = 0.0
 
         while self._running:
             t0 = time.time()
@@ -149,9 +151,11 @@ class CameraManager:
                 time.sleep(0.01)
                 continue
 
-            # Process frame (detection overlay, EAR, MAR, head pose, etc.)
+            # Process frame if not throttled by low-end mode
             if process_frame_fn is not None:
-                frame = process_frame_fn(frame)
+                if not LOW_END_MODE or (t0 - last_inference_time >= inference_interval):
+                    frame = process_frame_fn(frame)
+                    last_inference_time = t0
 
             # Encode to JPEG
             ret_enc, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
