@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "BlinkSafe",
+    "slug": "blinksafe",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "package": "com.blinksafe.app",
+      "permissions": ["CAMERA"],
+      "adaptiveIcon": {
+        "backgroundColor": "#0f172a"
+      }
+    }
+  }
+}
