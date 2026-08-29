@@ -9,7 +9,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const btnStart = document.getElementById('btn-start-session');
     const btnStop = document.getElementById('btn-stop-session');
+    const btnTestAlarm = document.getElementById('btn-test-alarm');
     const timerEl = document.getElementById('session-timer');
+
+    if (btnTestAlarm) {
+        btnTestAlarm.addEventListener('click', async () => {
+            btnTestAlarm.disabled = true;
+            btnTestAlarm.textContent = '🔊 Playing...';
+            try {
+                const res = await fetch('/api/test-alarm', { method: 'POST' });
+                const data = await res.json();
+                console.log('[Test Alarm Response]', data);
+            } catch (err) {
+                console.error('[Test Alarm Error]', err);
+            } setTimeout(() => {
+                btnTestAlarm.disabled = false;
+                btnTestAlarm.textContent = '🔊 Test Alarm';
+            }, 1200);
+        });
+    }
 
     const statusBadge = document.getElementById('status-badge');
     const sidebarState = document.getElementById('sidebar-state');
@@ -137,6 +155,39 @@ document.addEventListener('DOMContentLoaded', () => {
             if (yawnCount) yawnCount.textContent = data.yawn_count || 0;
             if (nodCount) nodCount.textContent = data.nod_count || 0;
             if (alertCount) alertCount.textContent = (data.drowsy_count || 0) + (data.danger_count || 0);
+
+            // Driver Recognition Card Update
+            const driverNameEl = document.getElementById('driver-name-display');
+            const driverPhoneEl = document.getElementById('driver-phone-display');
+            const driverBadgeEl = document.getElementById('driver-status-badge');
+
+            if (driverNameEl) driverNameEl.textContent = data.driver_name || 'Unknown Driver';
+            if (driverPhoneEl) driverPhoneEl.textContent = data.driver_phone || 'N/A';
+
+            if (driverBadgeEl) {
+                const status = data.driver_status || 'VERIFYING';
+                if (status === 'CONFIRMED') {
+                    driverBadgeEl.textContent = '✓ CONFIRMED';
+                    driverBadgeEl.style.background = 'rgba(16, 185, 129, 0.15)';
+                    driverBadgeEl.style.color = '#34d399';
+                    driverBadgeEl.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+                } else if (status === 'VERIFYING') {
+                    driverBadgeEl.textContent = 'VERIFYING...';
+                    driverBadgeEl.style.background = 'rgba(234, 179, 8, 0.15)';
+                    driverBadgeEl.style.color = '#facc15';
+                    driverBadgeEl.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+                } else if (status === 'MULTIPLE_FACES') {
+                    driverBadgeEl.textContent = 'MULTIPLE FACES';
+                    driverBadgeEl.style.background = 'rgba(168, 85, 247, 0.15)';
+                    driverBadgeEl.style.color = '#c084fc';
+                    driverBadgeEl.style.border = '1px solid rgba(168, 85, 247, 0.3)';
+                } else {
+                    driverBadgeEl.textContent = 'UNKNOWN DRIVER';
+                    driverBadgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
+                    driverBadgeEl.style.color = '#f87171';
+                    driverBadgeEl.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+                }
+            }
 
             // Confidence bar
             const confPct = Math.round((data.confidence || 0) * 100);

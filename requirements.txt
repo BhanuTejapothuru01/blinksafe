@@ -2,4 +2,5 @@ flask>=3.0
 opencv-python>=4.8
 mediapipe>=0.10.14,<1.0.0
 numpy>=1.24
+faiss-cpu>=1.7.4
 

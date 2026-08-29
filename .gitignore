@@ -22,9 +22,12 @@ env/
 *.sqlite3
 data/sleepguard.db
 data/sessions/*.json
+data/faiss/*.index
+data/faiss/*.json
 
-# MediaPipe Models & Logs
-models/face_landmarker.task
+# MediaPipe & ML Models & Logs
+models/*.task
+models/*.onnx
 logs/*.log
 
 # IDE & OS

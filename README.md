@@ -1,19 +1,80 @@
-# 🛡️ SleepGuard / BlinkSafe — Real-Time Drowsiness Detection
+# 🛡️ SleepGuard / BlinkSafe — Real-Time Drowsiness Detection & Driver Identification
 
-SleepGuard (BlinkSafe) is a real-time driver & user drowsiness detection system that uses your webcam to monitor alertness through **eye closure**, **yawning**, and **head pose** analysis.
+SleepGuard (BlinkSafe) is a real-time driver & user safety system that monitors driver alertness through **eye closure**, **yawning**, and **head pose** analysis, integrated with **Driver Identification** powered by **128D Face Embeddings** and **FAISS Vector Similarity Search**.
 
-## Features
+---
 
-- 📹 Live webcam monitoring via MJPEG stream
-- 👁️ Eye Aspect Ratio (EAR) detection for blink & microsleep tracking
-- 🥱 Mouth Aspect Ratio (MAR) for yawn detection
-- 🔄 Head pose estimation (pitch/yaw) for nod-off detection
-- 🧠 Weighted drowsiness fusion engine (ALERT → DROWSY → DANGER)
-- 🔊 Audible alarm on DANGER state
-- 📊 Session logging with SQLite + visual reports with Chart.js
-- 🌙 Modern dark-theme dashboard UI
+## 🏗️ System Architecture
 
-## Quick Start
+SleepGuard operates using two concurrent, decoupled processing pipelines:
+
+```
+                    ┌─────────────────────────┐
+                    │      Webcam Stream      │
+                    └────────────┬────────────┘
+                                 │
+                   ┌─────────────┴─────────────┐
+                   │  MediaPipe Face Detector  │
+                   └─────────────┬─────────────┘
+                                 │
+         ┌───────────────────────┴───────────────────────┐
+         │                                               │
+         ▼                                               ▼
+┌───────────────────────────────┐     ┌─────────────────────────────────┐
+│     SAFETY PIPELINE (100%)    │     │  DRIVER RECOGNITION (Throttled) │
+├───────────────────────────────┤     ├─────────────────────────────────┤
+│ • Eye Aspect Ratio (EAR)      │     │ • 128D Face Embedding Extractor │
+│ • Mouth Aspect Ratio (MAR)    │     │ • L2 Vector Normalization       │
+│ • Head Pose (Pitch/Yaw/Roll)  │     │ • FAISS Vector Search (FlatIP)  │
+│ • Drowsiness Fusion Engine    │     │ • Similarity Thresholding (0.45)│
+│ • Alarm Playback              │     │ • Temporal Voting Window (5f)   │
+│ • 60-Second SOS Countdown     │     │ • Driver Identity & Session     │
+└──────────────┬────────────────┘     └────────────────┬────────────────┘
+               │                                       │
+               └───────────────────┬───────────────────┘
+                                   │
+                                   ▼
+                   ┌──────────────────────────────┐
+                   │ SQLite Database & Reports    │
+                   │ • sessions (with driver_id)  │
+                   │ • drivers & face_embeddings  │
+                   └──────────────────────────────┘
+```
+
+---
+
+## 👤 Driver Registration & Recognition
+
+### 1. Driver Registration Flow
+1. Navigate to the **Dashboard** (`http://localhost:5001/`).
+2. Click **+ Register Driver**.
+3. Enter the driver's full **Name** and **Phone Number**.
+4. The system opens the camera, detects facial landmarks, extracts a **128-dimensional L2-normalized embedding vector** using OpenCV's SFace model, and adds it to the FAISS index.
+5. The mapping between vector ID, driver ID, and profile metadata is persisted to SQLite and disk.
+
+### 2. Live Recognition & Multi-Frame Voting
+- When monitoring starts, the system passes frame face regions to the recognition engine every $N$ frames (default: every 5 frames).
+- Face embeddings are searched against the FAISS `IndexFlatIP` vector index.
+- **Strict Thresholding**: If the cosine similarity score is below `0.45`, the face is categorized as `UNKNOWN_DRIVER` (preventing false nearest-neighbor assignments).
+- **Temporal Voting Window**: The recognizer maintains a 5-frame sliding window. A driver's identity is confirmed only after consistent matches across the voting window, preventing single-frame glitches or false switches.
+
+---
+
+## ⚡ Features
+
+- 👤 **Driver Identification**: Biometric face embedding recognition via FAISS vector search
+- 📹 **Live MJPEG Stream**: Webcam monitoring with real-time UI status overlays
+- 👁️ **Eye Aspect Ratio (EAR)**: Micro-sleep and blink detection
+- 🥱 **Mouth Aspect Ratio (MAR)**: Yawn frequency monitoring
+- 🔄 **Head Pose Estimation**: Pitch/yaw nod-off detection
+- 🧠 **Weighted Signal Fusion**: Real-time state classification (`ALERT` → `DROWSY` → `DANGER`)
+- 🔊 **Audio Alarm & SOS**: Loud alert playback on `DANGER` + 60-second emergency SOS countdown
+- 📊 **Session Reports**: Interactive timelines with Chart.js, safety index, and driver binding
+- 📱 **Mobile Ready**: Adaptive performance modes for 2 GB RAM budget devices
+
+---
+
+## 🚀 Quick Start
 
 ### 1. Clone the Repository
 
@@ -35,110 +96,76 @@ Double-click `start.bat` or run in Command Prompt:
 ```cmd
 start.bat
 ```
-Or in PowerShell:
-```powershell
-.\start.ps1
-```
 
 ---
 
-### ⚡ What the Startup Script Does Automatically:
-1. **Checks Python 3**: Verifies that Python 3 is installed.
-2. **Creates & Activates Virtual Environment**: Automatically initializes `venv/` if missing.
-3. **Installs Dependencies**: Upgrades pip and installs missing dependencies from `requirements.txt` (skips reinstall on subsequent runs).
-4. **Verifies Imports**: Ensures `flask`, `opencv-python`, `mediapipe`, and `numpy` import properly.
-5. **Downloads MediaPipe Assets**: Automatically fetches `face_landmarker.task` from Google storage if missing.
-6. **Creates Required Directories**: Ensures `models/`, `data/`, `data/sessions/`, `logs/`, `reports/` exist.
-7. **Resolves Port Conflicts**: Checks port `5001` and automatically assigns an available port if occupied.
-8. **Launches Server**: Starts Flask and displays project Dashboard URLs.
+## ⚙️ Threshold Configuration
 
-### 3. Open in Browser
-
-Once started, access the project URLs:
-- **Dashboard**: [http://localhost:5001/](http://localhost:5001/) — Overview & session history
-- **Live Monitor**: [http://localhost:5001/session](http://localhost:5001/session) — Live webcam feed & detection controls
-
----
-
-### Manual Setup (Alternative)
-
-If you prefer manual setup:
-
-1. **Virtual Environment & Dependencies**:
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate
-   pip install -r requirements.txt
-   ```
-
-2. **Download Model**:
-   ```bash
-   curl -L -o models/face_landmarker.task \
-     "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-   ```
-
-3. **Start Application**:
-   ```bash
-   python3 app.py
-   ```
-
----
-
-## Threshold Configuration
-
-All detection thresholds are configured in [`config/config.py`](config/config.py):
+All detection and recognition thresholds live in [`config/config.py`](config/config.py):
 
 | Parameter | Default | Description |
 |---|---|---|
-| `CAMERA_INDEX` | `0` | Webcam device index |
 | `EAR_THRESHOLD` | `0.21` | EAR below this → eyes closed |
-| `EAR_CONSEC_FRAMES` | `15` | Frames of closure before alert |
-| `MAR_THRESHOLD` | `0.75` | MAR above this → yawning |
-| `HEAD_PITCH_THRESHOLD` | `-15°` | Pitch below this → nodding |
-| `ALARM_COOLDOWN_SECONDS` | `10` | Min seconds between alarms |
-| `FLASK_PORT` | `5001` | Server web port |
+| `MAR_THRESHOLD` | `0.75` | MAR above this → mouth open (yawn) |
+| `HEAD_PITCH_THRESHOLD` | `-15°` | Pitch below this → head nodding |
+| `RECOGNITION_SIMILARITY_THRESHOLD` | `0.45` | Cosine similarity threshold for FAISS vector search |
+| `RECOGNITION_FRAME_INTERVAL` | `5` | Recognition processing interval (frames) |
+| `RECOGNITION_VOTING_WINDOW` | `5` | Sliding frame window count for temporal identity verification |
 
-## Project Structure
+---
+
+## 🔒 Privacy & Biometric Security
+
+- **No Raw Face Images**: SleepGuard does NOT store raw camera images or video frames.
+- **Local FAISS Indexing**: Biometric face embeddings are kept 100% local inside `data/faiss/drivers.index`.
+- **Git Protection**: `.gitignore` explicitly excludes `.index` and `.json` biometric vector files from repository commits.
+
+---
+
+## 📁 Project Structure
 
 ```
 blinksafe/
-├── start.py                   # Master cross-platform launcher
-├── start.sh                   # macOS / Linux startup script
-├── start.bat                  # Windows Command Prompt startup script
-├── start.ps1                  # Windows PowerShell startup script
+├── start.py                   # Master cross-platform launcher (Auto ML model fetcher)
 ├── app.py                     # Flask entrypoint & API routes
-├── requirements.txt           # Core Python dependencies
-├── package.json               # npm scripts configuration
-├── config/config.py           # All thresholds & settings
-├── camera/camera_manager.py   # OpenCV webcam wrapper
-├── detection/                 # Detection modules
+├── requirements.txt           # Python dependencies (includes faiss-cpu)
+├── config/config.py           # Thresholds, model paths, and FAISS settings
+├── recognition/               # Driver Identification & FAISS Package
+│   ├── face_embedding.py      # SFace 128D ONNX embedding extractor
+│   ├── faiss_manager.py       # FAISS IndexFlatIP vector manager & persistence
+│   ├── face_recognizer.py     # Multi-frame temporal voting & driver change detector
+│   └── driver_registry.py     # Driver registration & SQLite CRUD coordinator
+├── detection/                 # Safety detection modules (EAR, MAR, Head Pose)
 │   ├── face_detector.py       # MediaPipe face landmarker
 │   ├── eye_detector.py        # EAR-based eye closure
 │   ├── mouth_detector.py      # MAR-based yawn detection
 │   ├── head_pose.py           # solvePnP head pose
 │   └── drowsiness_engine.py   # Signal fusion engine
-├── alerts/alarm.py            # Alarm .wav playback (cross-platform)
+├── alerts/alarm.py            # Alarm audio player
 ├── database/                  # SQLite persistence
-│   ├── database.py            # Connection & CRUD
-│   └── models.py              # Session & Event models
-├── reports/report_generator.py # Report data builder
-├── utils/                     # Shared utilities
-│   ├── calculations.py        # EAR/MAR math
-│   ├── logger.py              # Rotating file logger
-│   └── helpers.py             # General helpers
+│   ├── database.py            # Connection & schema migrations
+│   └── models.py              # Driver, Embedding, Session, & Event data models
+├── reports/report_generator.py # Session report builder with driver binding
+├── utils/                     # SOS manager & rotating file logger
 ├── templates/                 # Jinja2 HTML templates
 ├── static/                    # CSS, JS, audio assets
-├── tests/                     # Pytest suite
-├── models/                    # MediaPipe model storage
-└── data/                      # SQLite DB & session exports
+├── tests/                     # Pytest test suite (37 unit tests)
+├── models/                    # MediaPipe & OpenCV SFace ONNX models
+└── data/                      # SQLite DB & persistent FAISS index storage
 ```
 
-## Running Tests
+---
+
+## 🧪 Running Tests
+
+Run the complete test suite (37 unit tests):
 
 ```bash
-python3 -m pytest tests/ -v
+pytest tests/ -v
 ```
 
-## License
+---
+
+## 📄 License
 
 MIT

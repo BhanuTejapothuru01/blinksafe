@@ -29,9 +29,23 @@ FRAME_WIDTH = 480 if LOW_END_MODE else 640
 FRAME_HEIGHT = 360 if LOW_END_MODE else 480
 FPS_TARGET = 30
 
-# ── MediaPipe Model ──────────────────────────────────────────────────────
+# ── MediaPipe & Face Recognition Models ──────────────────────────────────
 MODEL_PATH = os.path.join(BASE_DIR, 'models', 'face_landmarker.task')
+SFACE_MODEL_PATH = os.path.join(BASE_DIR, 'models', 'face_recognition_sface_2021dec.onnx')
 DRAW_LANDMARKS = not LOW_END_MODE  # Disable landmark overlay drawing on low-end 2 GB RAM devices to save CPU/GPU
+
+# ── Driver Identification & FAISS Settings ──────────────────────────────
+FAISS_DIR = os.path.join(BASE_DIR, 'data', 'faiss')
+FAISS_INDEX_PATH = os.path.join(FAISS_DIR, 'drivers.index')
+FAISS_MAP_PATH = os.path.join(FAISS_DIR, 'id_mapping.json')
+RECOGNITION_SIMILARITY_THRESHOLD = float(os.environ.get('RECOGNITION_THRESHOLD', '0.55'))  # SFace same-person match threshold
+MIN_MATCH_MARGIN = float(os.environ.get('MIN_MATCH_MARGIN', '0.05'))                    # Required top1 vs top2 match margin
+RECOGNITION_FRAME_INTERVAL = 10 if LOW_END_MODE else 5   # Run vector recognition every N frames
+RECOGNITION_REQUIRED_FRAMES = 5                           # Sliding frame window count for temporal identity verification
+RECOGNITION_VOTE_RATIO = 0.6                              # Majority ratio (60%) required to confirm driver
+RECOGNITION_TOP_K = 10                                    # Top-K FAISS nearest neighbors queried
+REGISTRATION_SAMPLE_COUNT = 20                            # Number of face embedding samples per registered driver
+RECOGNITION_EMBEDDING_DIM = 128                          # SFace vector dimensionality
 
 # ── Eye Detection (EAR) ─────────────────────────────────────────────────
 EAR_THRESHOLD = 0.21           # below this → eyes considered closed

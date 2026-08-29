@@ -80,8 +80,16 @@ class ReportGenerator:
             recommendation = "✅ Optimal Alertness: Great job! Stay attentive and take regular breaks."
             risk_level = "LOW RISK"
 
+        # Driver metadata formatting
+        driver_name = session_data.get('driver_name') or "Unknown / Not recorded"
+        driver_phone = session_data.get('driver_phone') or "N/A"
+        driver_id = session_data.get('driver_id')
+
         return {
             'session_id': session_id,
+            'driver_id': driver_id,
+            'driver_name': driver_name,
+            'driver_phone': driver_phone,
             'start_time': session_data.get('start_time'),
             'end_time': session_data.get('end_time'),
             'duration_str': duration_str,

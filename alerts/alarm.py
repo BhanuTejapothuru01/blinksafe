@@ -1,7 +1,7 @@
 """
-SleepGuard — Alarm Manager
+BlinkSafe — Alarm Manager
 
-Non-blocking audio alert playback for DANGER state with cooldown handling.
+Non-blocking audio alert playback for DANGER state with cooldown handling and direct test support.
 """
 
 import os
@@ -28,13 +28,15 @@ class AlarmManager:
         self.last_played = 0.0
         self._lock = threading.Lock()
 
-    def trigger(self) -> bool:
+    def trigger(self, force: bool = False) -> bool:
         """
-        Attempt to play alarm sound. Returns True if sound was played, False if suppressed by cooldown.
+        Attempt to play alarm sound.
+        Returns True if sound was played, False if suppressed by cooldown.
         """
         now = time.time()
         with self._lock:
-            if now - self.last_played < self.cooldown_seconds:
+            if not force and (now - self.last_played < self.cooldown_seconds):
+                logger.info("ALARM SUPPRESSED BY COOLDOWN (%.1fs remaining)", self.cooldown_seconds - (now - self.last_played))
                 return False
 
             if not os.path.exists(self.sound_path):
@@ -42,7 +44,7 @@ class AlarmManager:
                 return False
 
             self.last_played = now
-            logger.warning("🚨 ALARM TRIGGERED! Playing sound: %s", self.sound_path)
+            logger.warning("🚨 ALARM TRIGGERED! Executing sound playback: %s", self.sound_path)
 
             # Play in background thread so frame rate is never blocked
             thread = threading.Thread(target=self._play_sound, daemon=True)
@@ -53,10 +55,17 @@ class AlarmManager:
         """Internal audio playback helper using platform default utilities."""
         try:
             if sys.platform == 'darwin':  # macOS
-                subprocess.run(['afplay', self.sound_path], check=False)
+                logger.info("🔊 macOS afplay executing sound file: %s", self.sound_path)
+                res = subprocess.run(['afplay', self.sound_path], check=False, capture_output=True)
+                if res.returncode != 0:
+                    logger.error("afplay failed with returncode %d: %s", res.returncode, res.stderr.decode('utf-8', errors='ignore'))
+                else:
+                    logger.info("afplay finished playing sound successfully.")
             elif sys.platform.startswith('linux'):
+                logger.info("🔊 Linux aplay executing sound file: %s", self.sound_path)
                 subprocess.run(['aplay', self.sound_path], check=False)
             elif sys.platform == 'win32':
+                logger.info("🔊 Windows winsound playing sound file: %s", self.sound_path)
                 import winsound
                 winsound.PlaySound(self.sound_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
         except Exception as e:

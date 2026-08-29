@@ -112,26 +112,39 @@ def main():
 
     print("✓ Dependencies ready")
 
-    # [4/7] Checking MediaPipe assets
-    print("[4/7] Checking MediaPipe assets...")
+    # [4/7] Checking MediaPipe & Face Recognition assets
+    print("[4/7] Checking ML models & assets...")
     models_dir = os.path.join(SCRIPT_DIR, "models")
     os.makedirs(models_dir, exist_ok=True)
-    model_file = os.path.join(models_dir, "face_landmarker.task")
-    model_url = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
-
-    if not os.path.exists(model_file) or os.path.getsize(model_file) == 0:
+    
+    # MediaPipe Face Landmarker
+    mp_model_file = os.path.join(models_dir, "face_landmarker.task")
+    mp_model_url = "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"
+    if not os.path.exists(mp_model_file) or os.path.getsize(mp_model_file) == 0:
         print("📥 Downloading MediaPipe Face Landmarker model...")
         try:
-            urllib.request.urlretrieve(model_url, model_file)
-            if not os.path.exists(model_file) or os.path.getsize(model_file) == 0:
-                raise ValueError("Downloaded file is empty.")
-            print("✓ Model downloaded successfully")
+            urllib.request.urlretrieve(mp_model_url, mp_model_file)
+            print("✓ MediaPipe model downloaded")
         except Exception as e:
-            print(f"❌ ERROR: Required model could not be downloaded: {e}")
-            print("Please check your internet connection and try again.")
+            print(f"❌ ERROR: Required MediaPipe model could not be downloaded: {e}")
             sys.exit(1)
-    else:
-        print("✓ MediaPipe assets ready")
+
+    # OpenCV SFace ONNX model for Face Recognition embeddings
+    sface_model_file = os.path.join(models_dir, "face_recognition_sface_2021dec.onnx")
+    sface_model_url = "https://media.githubusercontent.com/media/opencv/opencv_zoo/main/models/face_recognition_sface/face_recognition_sface_2021dec.onnx"
+    if not os.path.exists(sface_model_file) or os.path.getsize(sface_model_file) < 1000000:
+        print("📥 Downloading OpenCV SFace Recognition ONNX model...")
+        try:
+            import ssl
+            context = ssl._create_unverified_context()
+            req = urllib.request.urlopen(sface_model_url, context=context)
+            with open(sface_model_file, 'wb') as f:
+                f.write(req.read())
+            print("✓ SFace ONNX model downloaded successfully")
+        except Exception as e:
+            print(f"⚠️ WARNING: Could not download SFace model automatically: {e}")
+
+    print("✓ Models and assets ready")
 
     # [5/7] Checking required directories
     print("[5/7] Checking directories...")
@@ -139,6 +152,7 @@ def main():
         os.path.join(SCRIPT_DIR, "models"),
         os.path.join(SCRIPT_DIR, "data"),
         os.path.join(SCRIPT_DIR, "data", "sessions"),
+        os.path.join(SCRIPT_DIR, "data", "faiss"),
         os.path.join(SCRIPT_DIR, "logs"),
         os.path.join(SCRIPT_DIR, "reports"),
     ]

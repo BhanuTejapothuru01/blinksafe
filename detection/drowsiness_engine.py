@@ -1,8 +1,9 @@
 """
-SleepGuard — Drowsiness Signal Fusion Engine
+BlinkSafe — Drowsiness Signal Fusion Engine
 
 Fuses eye closure, yawning, and head pose signals into a single drowsiness score
-and state machine (ALERT → DROWSY → DANGER) with state hysteresis.
+and state machine (ALERT → DROWSY → DANGER) with sustained eye closure escalation
+and state hysteresis.
 """
 
 from config.config import (
@@ -39,6 +40,7 @@ class DrowsinessEngine:
         self.pending_state = self.STATE_ALERT
         self.pending_count = 0
         self.confidence = 0.0
+        self.sustained_closed_frames = 0
 
     def update(self, eye_state: dict, mouth_state: dict, head_state: dict) -> dict:
         """
@@ -57,12 +59,22 @@ class DrowsinessEngine:
             'head_state': dict,
         }
         """
-        # Calculate individual score contributions
-        eye_score = 1.0 if eye_state.get('closed', False) else 0.0
-        mouth_score = 1.0 if mouth_state.get('yawning', False) else 0.0
-        head_score = 1.0 if head_state.get('nodding', False) else 0.0
+        eye_closed = eye_state.get('closed', False)
+        mouth_yawning = mouth_state.get('yawning', False)
+        head_nodding = head_state.get('nodding', False)
 
-        # Partial contributions based on values
+        # Track sustained eye closure frames
+        if eye_closed:
+            self.sustained_closed_frames += 1
+        else:
+            self.sustained_closed_frames = 0
+
+        # Calculate individual score contributions
+        eye_score = 1.0 if eye_closed else 0.0
+        mouth_score = 1.0 if mouth_yawning else 0.0
+        head_score = 1.0 if head_nodding else 0.0
+
+        # Partial contributions based on continuous feature values
         if not eye_score and eye_state.get('ear', 1.0) < 0.25:
             eye_score = (0.25 - eye_state['ear']) / 0.25
 
@@ -74,12 +86,17 @@ class DrowsinessEngine:
         w_head = self.weights.get('head', 0.30)
 
         score = (eye_score * w_eye) + (mouth_score * w_mouth) + (head_score * w_head)
+        
+        # Boost confidence when eyes are closed continuously
+        if self.sustained_closed_frames >= 20:
+            score = max(score, min(1.0, 0.50 + (self.sustained_closed_frames - 20) * 0.03))
+
         self.confidence = round(float(min(1.0, max(0.0, score))), 2)
 
-        # Determine target state
-        if self.confidence >= self.danger_threshold or (eye_state.get('closed') and head_state.get('nodding')):
+        # Determine target state (Escalate to DANGER if sustained eye closure >= 30 frames / ~1 sec)
+        if self.confidence >= self.danger_threshold or (eye_closed and head_nodding) or self.sustained_closed_frames >= 30:
             target_state = self.STATE_DANGER
-        elif self.confidence >= self.drowsy_threshold or eye_state.get('closed') or mouth_state.get('yawning') or head_state.get('nodding'):
+        elif self.confidence >= self.drowsy_threshold or eye_closed or mouth_yawning or head_nodding:
             target_state = self.STATE_DROWSY
         else:
             target_state = self.STATE_ALERT
@@ -95,9 +112,17 @@ class DrowsinessEngine:
                 self.pending_state = target_state
                 self.pending_count = 1
 
-            # Immediate escalation to DANGER if severe, otherwise wait for hysteresis frames
-            if (target_state == self.STATE_DANGER and self.confidence >= 0.85) or self.pending_count >= self.hysteresis_frames:
-                logger.info("State transition: %s → %s (confidence=%.2f)", self.current_state, target_state, self.confidence)
+            # Immediate escalation to DANGER if sustained eye closure or high confidence
+            if (target_state == self.STATE_DANGER and (self.confidence >= 0.75 or self.sustained_closed_frames >= 30)) or self.pending_count >= self.hysteresis_frames:
+                logger.info(
+                    "State transition: %s → %s (confidence=%.2f, EAR=%.2f, MAR=%.2f, sustained_closed=%d)",
+                    self.current_state,
+                    target_state,
+                    self.confidence,
+                    eye_state.get('ear', 0.0),
+                    mouth_state.get('mar', 0.0),
+                    self.sustained_closed_frames,
+                )
                 self.current_state = target_state
                 self.pending_count = 0
 
@@ -115,3 +140,4 @@ class DrowsinessEngine:
         self.pending_state = self.STATE_ALERT
         self.pending_count = 0
         self.confidence = 0.0
+        self.sustained_closed_frames = 0

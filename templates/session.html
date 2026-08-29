@@ -58,6 +58,7 @@
                 <div class="flex items-center justify-between mt-2">
                     <div class="session-timer" id="session-timer">00:00:00</div>
                     <div class="flex gap-1">
+                        <button class="btn btn-outline" id="btn-test-alarm" title="Test audio beep sound">🔊 Test Alarm</button>
                         <button class="btn btn-primary" id="btn-start-session">▶ Start</button>
                         <button class="btn btn-danger" id="btn-stop-session" disabled>■ Stop</button>
                     </div>
@@ -66,6 +67,24 @@
 
             <!-- ── Sidebar: Live Stats ────────────────────────────── -->
             <div class="monitoring-sidebar slide-in">
+
+                <!-- Identified Driver Card -->
+                <div class="card" id="driver-identity-card">
+                    <div class="card-header">
+                        <h3 class="card-title">Driver Identity</h3>
+                        <span class="badge badge--alert" id="driver-status-badge" style="background: rgba(234, 179, 8, 0.15); color: #facc15; border: 1px solid rgba(234, 179, 8, 0.3);">
+                            <span class="badge-dot" style="background: #facc15;"></span>
+                            VERIFYING
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-1 mt-1">
+                        <div style="font-size: 1.8rem; background: rgba(30, 41, 59, 0.8); padding: 8px 12px; border-radius: 8px;">👤</div>
+                        <div>
+                            <div style="font-weight: 700; font-size: 1.1rem; color: #f8fafc;" id="driver-name-display">Unknown Driver</div>
+                            <div style="font-size: 0.85rem; color: #94a3b8;" id="driver-phone-display">N/A</div>
+                        </div>
+                    </div>
+                </div>
 
                 <!-- Current State -->
                 <div class="card">

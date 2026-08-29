@@ -44,6 +44,14 @@ document.addEventListener('DOMContentLoaded', () => {
             if (repYawns) repYawns.textContent = data.yawn_count || 0;
             if (repBlinks) repBlinks.textContent = data.blink_count || 0;
 
+            // Driver info
+            const driverNameEl = document.getElementById('report-driver-name');
+            if (driverNameEl) {
+                const dName = data.driver_name || 'Unknown / Not recorded';
+                const dPhone = data.driver_phone && data.driver_phone !== 'N/A' ? ` | 📞 ${data.driver_phone}` : '';
+                driverNameEl.textContent = `👤 Driver: ${dName}${dPhone}`;
+            }
+
             if (dateSub && data.start_time) {
                 dateSub.textContent = `Recorded on ${new Date(data.start_time).toLocaleString()}`;
             }

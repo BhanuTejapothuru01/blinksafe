@@ -62,6 +62,54 @@
             </div>
         </div>
 
+        <!-- ── Driver Registration & Management ────────────────────── -->
+        <div class="card mb-2" style="animation-delay: 0.15s;">
+            <div class="card-header flex justify-between items-center">
+                <div>
+                    <h2 class="card-title">Registered Drivers</h2>
+                    <span class="text-muted" style="font-size: 0.85rem;">Face embedding FAISS index profiles</span>
+                </div>
+                <div class="flex gap-1">
+                    <button class="btn btn-outline" id="btn-reset-drivers" style="color: #f87171; border-color: rgba(248, 113, 113, 0.3);" title="Wipe clean FAISS vector index">Reset Vectors</button>
+                    <button class="btn btn-primary" id="btn-open-register-modal">+ Register Driver</button>
+                </div>
+            </div>
+            <div id="drivers-list-container" class="mt-1">
+                <div class="empty-state">
+                    <p>Loading registered drivers...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Driver Registration Modal Container -->
+        <div id="register-driver-modal" style="display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); z-index: 1000; justify-content: center; align-items: center; padding: 1rem;">
+            <div class="card" style="width: 100%; max-width: 500px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                <div class="card-header flex justify-between items-center">
+                    <h3 class="card-title">👤 Register New Driver</h3>
+                    <button id="btn-close-register-modal" style="background:none; border:none; color:#94a3b8; font-size:1.5rem; cursor:pointer;">&times;</button>
+                </div>
+                <form id="driver-register-form" style="margin-top: 1rem;">
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display:block; font-size:0.85rem; color:#94a3b8; margin-bottom:0.3rem;">Driver Full Name</label>
+                        <input type="text" id="reg-driver-name" required placeholder="e.g. Bhanu Teja" style="width:100%; padding:0.6rem 0.8rem; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#f8fafc; font-size:0.95rem;">
+                    </div>
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display:block; font-size:0.85rem; color:#94a3b8; margin-bottom:0.3rem;">Phone Number</label>
+                        <input type="tel" id="reg-driver-phone" required placeholder="e.g. +1 555-0199" style="width:100%; padding:0.6rem 0.8rem; background:#1e293b; border:1px solid #334155; border-radius:6px; color:#f8fafc; font-size:0.95rem;">
+                    </div>
+                    <div style="margin-bottom: 1rem; background: rgba(30, 41, 59, 0.5); padding: 1rem; border-radius: 8px; text-align: center;">
+                        <p style="font-size:0.85rem; color:#cbd5e1; margin-bottom:0.3rem;">📷 Camera Face Embedding Capture</p>
+                        <div id="capture-status" style="font-size:0.8rem; color:#94a3b8;">Captures live face features & indexes into FAISS vector search</div>
+                    </div>
+                    <div id="reg-msg" style="font-size:0.85rem; margin-bottom:1rem; display:none; padding:0.5rem; border-radius:6px;"></div>
+                    <div class="flex justify-end gap-1">
+                        <button type="button" class="btn btn-secondary" id="btn-cancel-register">Cancel</button>
+                        <button type="submit" class="btn btn-primary" id="btn-submit-register">Save & Index Driver</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- ── Past Sessions List ──────────────────────────────────── -->
         <div class="card" style="animation-delay: 0.2s;">
             <div class="card-header">
