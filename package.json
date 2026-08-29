@@ -1,0 +1,19 @@
+{
+  "name": "sleepguard",
+  "version": "1.0.0",
+  "description": "SleepGuard — Real-Time Driver & User Drowsiness Detection System",
+  "main": "app.py",
+  "scripts": {
+    "dev": "python start.py || python3 start.py",
+    "start": "python start.py || python3 start.py",
+    "test": "pytest tests/ -v"
+  },
+  "keywords": [
+    "drowsiness-detection",
+    "mediapipe",
+    "opencv",
+    "flask"
+  ],
+  "author": "",
+  "license": "MIT"
+}
