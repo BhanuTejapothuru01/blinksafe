@@ -93,23 +93,22 @@ class FaceDetector:
         }
 
     def draw_landmarks(self, frame: np.ndarray, detection_result: dict | None, draw_bbox: bool = True) -> np.ndarray:
-        """Draw facial landmarks and bounding box on a BGR frame."""
+        """Draw facial landmarks and bounding box in-place on a BGR frame."""
         if frame is None or detection_result is None:
             return frame
 
-        annotated = frame.copy()
         pixel_landmarks = detection_result.get('pixel_landmarks', [])
 
-        # Draw dots for landmarks
+        # Draw dots for landmarks directly in-place
         for x, y, _ in pixel_landmarks:
-            cv2.circle(annotated, (x, y), 1, (0, 255, 0), -1)
+            cv2.circle(frame, (x, y), 1, (0, 255, 0), -1)
 
-        # Draw bounding box
-        if draw_bbox:
+        # Draw bounding box directly in-place
+        if draw_bbox and 'bbox' in detection_result:
             x, y, w, h = detection_result['bbox']
-            cv2.rectangle(annotated, (x, y), (x + w, y + h), (255, 191, 0), 2)
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 191, 0), 2)
 
-        return annotated
+        return frame
 
     def close(self):
         """Release MediaPipe landmarker resources."""

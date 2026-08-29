@@ -79,22 +79,23 @@ class HeadPoseEstimator:
 
         image_points = np.array(image_points, dtype=np.float64)
 
-        # Camera intrinsic matrix setup
-        focal_length = float(w)
-        center = (w / 2.0, h / 2.0)
-        camera_matrix = np.array([
-            [focal_length, 0.0, center[0]],
-            [0.0, focal_length, center[1]],
-            [0.0, 0.0, 1.0],
-        ], dtype=np.float64)
-
-        dist_coeffs = np.zeros((4, 1), dtype=np.float64)
+        # Cached camera intrinsic matrix setup
+        if not hasattr(self, '_last_shape') or self._last_shape != (h, w):
+            self._last_shape = (h, w)
+            focal_length = float(w)
+            center = (w / 2.0, h / 2.0)
+            self._camera_matrix = np.array([
+                [focal_length, 0.0, center[0]],
+                [0.0, focal_length, center[1]],
+                [0.0, 0.0, 1.0],
+            ], dtype=np.float64)
+            self._dist_coeffs = np.zeros((4, 1), dtype=np.float64)
 
         success, rvec, _ = cv2.solvePnP(
             MODEL_POINTS_3D,
             image_points,
-            camera_matrix,
-            dist_coeffs,
+            self._camera_matrix,
+            self._dist_coeffs,
             flags=cv2.SOLVEPNP_ITERATIVE,
         )
 

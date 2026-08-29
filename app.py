@@ -127,6 +127,10 @@ def process_frame(frame: np.ndarray) -> np.ndarray:
 
             session_state['ear_samples'].append(eye_res['ear'])
             session_state['mar_samples'].append(mouth_res['mar'])
+            if len(session_state['ear_samples']) > 10000:
+                session_state['ear_samples'] = session_state['ear_samples'][-5000:]
+            if len(session_state['mar_samples']) > 10000:
+                session_state['mar_samples'] = session_state['mar_samples'][-5000:]
 
             # Log blinks / eye closure transition
             if eye_res['closed'] and not session_state['last_eye_closed']:
