@@ -33,7 +33,10 @@ class FaceDetector:
             raise FileNotFoundError(f"Model file not found: {model_path}")
 
         logger.info("Initializing FaceLandmarker with model: %s", model_path)
-        base_options = python.BaseOptions(model_asset_path=model_path)
+        base_options = python.BaseOptions(
+            model_asset_path=model_path,
+            delegate=python.BaseOptions.Delegate.CPU,
+        )
         options = vision.FaceLandmarkerOptions(
             base_options=base_options,
             running_mode=vision.RunningMode.IMAGE,

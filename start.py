@@ -172,6 +172,18 @@ def main():
     print("Press Ctrl+C to stop.")
     print("========================================")
 
+    # Launch browser automatically after server initializes
+    def _open_browser_async():
+        time.sleep(1.2)
+        try:
+            import webbrowser
+            webbrowser.open(f"http://localhost:{actual_port}/")
+        except Exception:
+            pass
+
+    import threading
+    threading.Thread(target=_open_browser_async, daemon=True).start()
+
     app_py = os.path.join(SCRIPT_DIR, "app.py")
     try:
         subprocess.run([sys.executable, app_py], check=True)
